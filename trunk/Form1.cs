@@ -43,13 +43,19 @@ namespace RPQ
         {
             if (fbdOpen.ShowDialog() == DialogResult.OK)
             {
-                lstPhotos.Items.Clear();
-                foreach (string filename in Directory.GetFiles(fbdOpen.SelectedPath))
-                {                    
-                    var fiPicture = new FileInfo(filename);
-                    if (checkFileForOpen(fiPicture)) 
-                        lstPhotos.Items.Add(filename);                    
-                }
+                LoadFiles(fbdOpen.SelectedPath);
+            }
+
+        }
+        private void LoadFiles(string path)
+        {
+            lstPhotos.Items.Clear();
+           // lstPhotos.Items.Add("d:\\ftp\\Izobilnoe-Gurzuf\\IMG_3683.jpg");
+            foreach (string filename in Directory.GetFiles(path))
+            {
+                var fiPicture = new FileInfo(filename);
+                if (checkFileForOpen(fiPicture))
+                    lstPhotos.Items.Add(filename);
             }
             prgReduce.Maximum = lstPhotos.Items.Count;
             lblCountInputImg.Text = lstPhotos.Items.Count.ToString();
@@ -76,16 +82,24 @@ namespace RPQ
                 epParameters.Param[0] = epQuality;
 
                 iciJpegCodec = pData.Codek;
-
                 for (int i = 0; i < pData.path.Length; i++)
                 {
 
-
+                    
                     if (pData.path == null || pData.path.Length == 0 || !File.Exists(pData.path[i]))
                     {
                         continue;
                     }
-                    Image newImage = Image.FromFile(pData.path[i]);
+                    Image newImage;
+                    Bitmap bmp;
+                    using (FileStream fs = File.OpenRead(pData.path[i]))
+                    {
+                       newImage = Bitmap.FromFile(pData.path[i]);
+                    }
+
+
+ 
+                     
                     dbg = pData.path[i];
                     if (pData.mPix != -1) pData.width = Form1.GetSize(pData.mPix, newImage.Height, newImage.Width);
 
@@ -93,7 +107,12 @@ namespace RPQ
                     if (pData.width > 0 || pData.Ramka != null)
                     {
                         if (pData.width <= 0) pData.width = newImage.Width;
-                        newImage = Form1.FixedSize(newImage, ref pData.Ramka, pData.width, pData.width * newImage.Height / newImage.Width, pData.interpolationMode);
+                        bmp = Form1.FixedSize((Image)newImage, ref pData.Ramka, pData.width, pData.width * newImage.Height / newImage.Width, pData.interpolationMode);
+                    }
+                    else
+                    {
+                        bmp = ExtractBitmapFromOpenedFile(newImage);
+                        newImage.Dispose();
                     }
 
                     var fiPicture = new FileInfo(pData.path[i]);
@@ -104,22 +123,14 @@ namespace RPQ
                     
                     if (iciJpegCodec != null)
                     {
-                        newImage.Save(fullName, iciJpegCodec, epParameters);
-                        newImage.Dispose();
-                        //using (FileStream fs = File.OpenWrite(fullName))
-                        //{
-                        //    newImage.Save(fs, iciJpegCodec, epParameters);
-                        //    newImage.Dispose();
-                        //  //  newImage.Save(fullName, iciJpegCodec, epParameters);
-                        //}
+                        using (FileStream fs = File.OpenWrite(fullName))
+                        {
+                            bmp.Save(fs, iciJpegCodec, epParameters);
+                            bmp.Dispose();
+                        }
                     }
-
-                    
                     pData.Increment();
-
                 }
-
-
             }
             catch (Exception ex)
             {
@@ -129,10 +140,63 @@ namespace RPQ
             finally
             {
                 
-               // if (pData != null && pData.Ramka != null) pData.Ramka.Dispose();
+                if (pData != null && pData.Ramka != null) pData.Ramka.Dispose();
+                pData.endProcess.Set();
             }
         }
-        public static Image FixedSize(Image imgPhoto, ref Image Ramka, int Width, int Height, InterpolationMode interpolationMode)
+        private static void WaitProcess(object state)
+        {
+            WaitParametrsType wt = state as WaitParametrsType;
+            WaitHandle.WaitAll(wt.waitHandles);
+            wt.progressBar.Invoke((MethodInvoker)delegate()
+            {
+                wt.progressBar.Value = 0;
+            });
+            wt.releaseButton.Invoke((MethodInvoker)delegate()
+            {
+                wt.releaseButton.Enabled = true;
+            });
+
+            MessageBox.Show("Конвертация завершена");
+
+ 
+        }
+        private static Bitmap ExtractBitmapFromOpenedFile(Image curentImage)
+        {
+            Bitmap bitmapToSave = new Bitmap(curentImage.Width, curentImage.Height, PixelFormat.Format24bppRgb);
+            bitmapToSave.SetResolution(curentImage.Width, curentImage.Height);
+
+            using (Graphics graphics = Graphics.FromImage(bitmapToSave))
+            {
+                graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                graphics.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                graphics.DrawImage(curentImage,
+                                   new Rectangle(0, 0, curentImage.Width, curentImage.Height),
+                                   0, 0, curentImage.Width, curentImage.Height,
+                                   GraphicsUnit.Pixel);
+                
+            }
+            return bitmapToSave;
+        }
+
+        //--------------
+
+        //private static void SaveBitmapByExtension(string fullFileName, Image curentImage, ImageFormat imageFormat)
+        //{
+        //    if (!string.IsNullOrEmpty(fullFileName))
+        //    {
+        //        Bitmap bitmapToSave = ExtractBitmapFromOpenedFile(curentImage);
+
+        //        EncoderParameters encoderParameters = new EncoderParameters(1);
+        //        encoderParameters.Param[0] =
+        //            new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, imageQuality);
+        //        bitmapToSave.Save(fullFileName, GetEncoder(imageFormat), encoderParameters);
+
+        //        bitmapToSave.Dispose();
+        //    }
+        //}
+        public static Bitmap FixedSize(Image imgPhoto, ref Image Ramka, int Width, int Height, InterpolationMode interpolationMode)
         {
             try
             {
@@ -182,6 +246,7 @@ namespace RPQ
         {
             try
             {
+                btnReduce.Enabled = false;
                 if (lstPhotos.Items.Count == 0) throw new Exception("Добавтье хотя бы 1 картинку");
                 if (threads[0] != null)
                 {
@@ -195,7 +260,8 @@ namespace RPQ
                 int  width = -1;
                 double mPix = -1;
                 string[] list = new string[n];
-
+                 
+                
                 for (int i = 0; i < n; i++)
                 {
                     list[i] = lstPhotos.Items[i].ToString();
@@ -219,7 +285,7 @@ namespace RPQ
                 int Cores = comboBox3.SelectedIndex + 1;
                 int numOfTask = list.Length / Cores + 1;
                 string[,] taskList = new string[Cores, numOfTask];
-               
+                ManualResetEvent[] waitHandels = new ManualResetEvent[Cores];
                 
                 for (int i = 0; i < Cores; i++)
                 {
@@ -227,30 +293,11 @@ namespace RPQ
                     {
                         if (i * numOfTask + j >= list.Length) break;
                         taskList[i, j] = list[i * numOfTask + j];
-                    }                
-                }
-
-                //debug
-                Dictionary<string, int> a = new Dictionary<string, int>();
-                for (int i = 0; i < Cores; i++)
-                {
-                    for (int j = 0; j < numOfTask; j++)
-                    {
-                        if (string.IsNullOrEmpty(taskList[i, j])) continue;
-                        int str;
-                        if (a.TryGetValue(taskList[i, j], out str))
-                        {
-                            throw new Exception("duplicated found");
-                        }
-                        else
-                        {
-                            a[taskList[i, j]] = 1;                        
-                        }
-
                     }
+                    waitHandels[i] = new ManualResetEvent(false);
                 }
 
-                
+                Directory.CreateDirectory(pathToSave);
                 for (int i = 0; i < Cores; i++)
                 {
                     Image Ramka = null;
@@ -266,12 +313,19 @@ namespace RPQ
                     myData data = new myData(signleTask, pathToSave, prgReduce, width,
                                            iciCodecs[comboBox1.SelectedIndex],
                                            InterpolateQuality[comboBox2.SelectedIndex],
-                                           numQual.Value , Ramka, mPix
+                                           numQual.Value , Ramka, mPix, waitHandels[i]
                                            );
                     threads[i].Start(data);
                 }
                 pathToRamka = "";
-                
+                WaitParametrsType wt = new WaitParametrsType()
+                {
+                    progressBar = prgReduce,
+                    releaseButton = btnReduce,
+                    waitHandles = waitHandels
+                };
+                Thread waitThread = new Thread(new ParameterizedThreadStart(WaitProcess));
+                waitThread.Start(wt);
             }
             catch (Exception ex)
             {
@@ -324,7 +378,8 @@ namespace RPQ
                         supportedExtensions.Add(ext[j].Substring(2));
                     }
                 }
-                pathToSave = "c:\\";
+                pathToSave = "c:\\PictureQualityImages\\";
+                //LoadFiles("d:\\ftp\\Izobilnoe-Gurzuf\\");
                 threads = new Thread[32];
                 pathToRamka = "";
                 for (int i = 0; i < 32; i++)

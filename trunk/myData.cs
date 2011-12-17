@@ -27,16 +27,17 @@ namespace RPQ
         public double mPix;
         public int jpegQuality;
         public InterpolationMode interpolationMode;
+        public ManualResetEvent endProcess;
         public void Increment()
         {
-            progressBar.Invoke((MethodInvoker)delegate
+            progressBar.BeginInvoke((MethodInvoker)delegate
                 {
                     progressBar.Increment(1);
                 });
            
         }
-        public myData(string [] filenames, string pathToSave_ , ProgressBar progressBar1, int W, 
-                    ImageCodecInfo codek , InterpolationMode mode, int jpgQual , Image Ramka_ , double mpix)
+        public myData(string [] filenames, string pathToSave_ , ProgressBar progressBar1, int W,
+                    ImageCodecInfo codek, InterpolationMode mode, int jpgQual, Image Ramka_, double mpix, ManualResetEvent _endProcess)
         {
             if (W > 0) width = W;
             height = -1;
@@ -50,7 +51,7 @@ namespace RPQ
             path = new string[filenames.Length];
             for (int i = 0; i < filenames.Length; i++)
                 path[i] = filenames[i];
-            
+            endProcess = _endProcess;
 
         }
         public int maxProgress
