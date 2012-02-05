@@ -83,6 +83,9 @@
             this.lstPhotos.Name = "lstPhotos";
             this.lstPhotos.Size = new System.Drawing.Size(519, 225);
             this.lstPhotos.TabIndex = 1;
+            this.lstPhotos.DragDrop += new System.Windows.Forms.DragEventHandler(this.lstPhotos_DragDrop);
+            this.lstPhotos.DragEnter += new System.Windows.Forms.DragEventHandler(this.lstPhotos_DragEnter);
+            this.lstPhotos.DragOver += new System.Windows.Forms.DragEventHandler(this.lstPhotos_DragOver);
             this.lstPhotos.KeyDown += new System.Windows.Forms.KeyEventHandler(this.lstPhotos_KeyDown);
             // 
             // prgReduce

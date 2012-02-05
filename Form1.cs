@@ -23,6 +23,7 @@ namespace RPQ
         Thread []threads;
         ImageCodecInfo[] iciCodecs, iciDecodres;
         ArrayList supportedExtensions;
+        List<string> AllowedExt = new List<string>();
         public Form1()
         {
             InitializeComponent();
@@ -391,7 +392,9 @@ namespace RPQ
                 }
                 comboBox3.SelectedIndex = Environment.ProcessorCount - 1;
                 lstPhotos.MultiColumn = true;
-                
+                this.AllowDrop = true;
+                lstPhotos.AllowDrop = true;
+                InitAllowedExtension();
             }
             catch (Exception ex)
             {
@@ -499,6 +502,43 @@ namespace RPQ
         {
             textBox2.Enabled = true;
             textBox1.Enabled = false;
+        }
+        private void InitAllowedExtension()
+        {
+         
+            foreach (var codek in iciCodecs)
+            {
+                string[] exts = codek.FilenameExtension.Split(';');
+                foreach (string ext in exts)
+                {
+                    AllowedExt.Add(ext.Replace("*",string.Empty).Trim().ToUpper());
+                }
+            }
+ 
+        }
+        private void lstPhotos_DragDrop(object sender, DragEventArgs e)
+        {
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+ 
+            foreach (string file in files)
+            {
+                if(AllowedExt.Contains(Path.GetExtension(file).ToUpper()))  
+                {
+                     lstPhotos.Items.Add(file);
+                }
+
+            }
+        }
+
+        private void lstPhotos_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy;
+  
+        }
+
+        private void lstPhotos_DragOver(object sender, DragEventArgs e)
+        {
+           
         }
     }
 }
