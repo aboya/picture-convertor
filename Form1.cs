@@ -540,5 +540,15 @@ namespace RPQ
         {
            
         }
+
+        private void OptionsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (var o = new Options())
+            {
+                o.ShowDialog();
+            }
+        }
+
+ 
     }
 }

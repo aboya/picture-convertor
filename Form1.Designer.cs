@@ -47,6 +47,7 @@
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.ДобавлениеРамки = new System.Windows.Forms.ToolStripMenuItem();
+            this.OptionsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripMenuItem2 = new System.Windows.Forms.ToolStripMenuItem();
             this.оПрограммеToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.comboBox3 = new System.Windows.Forms.ComboBox();
@@ -212,7 +213,8 @@
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.ДобавлениеРамки});
+            this.ДобавлениеРамки,
+            this.OptionsToolStripMenuItem});
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
             this.toolStripMenuItem1.Size = new System.Drawing.Size(68, 20);
             this.toolStripMenuItem1.Text = "Функции";
@@ -223,6 +225,13 @@
             this.ДобавлениеРамки.Size = new System.Drawing.Size(179, 22);
             this.ДобавлениеРамки.Text = "Добавление рамки";
             this.ДобавлениеРамки.Click += new System.EventHandler(this.ДобавлениеРамкиToolStripMenuItem_Click);
+            // 
+            // OptionsToolStripMenuItem
+            // 
+            this.OptionsToolStripMenuItem.Name = "OptionsToolStripMenuItem";
+            this.OptionsToolStripMenuItem.Size = new System.Drawing.Size(179, 22);
+            this.OptionsToolStripMenuItem.Text = "Опции";
+            this.OptionsToolStripMenuItem.Click += new System.EventHandler(this.OptionsToolStripMenuItem_Click);
             // 
             // toolStripMenuItem2
             // 
@@ -397,6 +406,7 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.RadioButton radioButton2;
         private System.Windows.Forms.Label lblCountInputImg;
+        private System.Windows.Forms.ToolStripMenuItem OptionsToolStripMenuItem;
     }
 }
 
